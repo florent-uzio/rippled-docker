@@ -1,0 +1,155 @@
+# TODO: Include dockerfiles as git submodules
+services:
+  rippled:
+    hostname: rippled
+    image: "${IMAGE}"
+    build:
+      dockerfile: ${RIPPLED_DOCKERFILE}
+    container_name: rippled
+    entrypoint: /config_ips.sh
+    volumes:
+        - ./config_ips.sh:/config_ips.sh  # TODO: Remove once rippled/Clio configs can accept DNS names
+        - ./Nodes/${VERSION}/rippled/:/etc/opt/ripple
+        - rippled:/var/lib/rippled:delegated
+    healthcheck:
+      test: ["CMD", "/etc/opt/ripple/rippled_health.sh"]  # TODO: Fix this path once the image is built with the script.
+      interval: 20s
+      timeout: 5m
+      retries: 5
+      start_period: 30s
+    depends_on:
+      val0:
+        condition: service_healthy
+    ports:
+      - ${RIPPLED_RPC_PORT}
+    networks:
+     rippled-net:
+
+  clio:
+    hostname: clio
+    image: legleux/clio_server:develop
+    # build:  # TODO: Include
+    #   dockerfile:
+    container_name: clio
+    entrypoint: /config_ips.sh
+    ports:
+      - ${CLIO_PORT}
+    volumes:
+        - ./config_ips.sh:/config_ips.sh
+        - ./Nodes/${VERSION}/clio/:/opt/clio/etc/
+    command: ["/opt/clio/bin/clio_server", "/opt/clio/etc/config.json"]
+    depends_on:
+      scylla:
+        condition: service_healthy
+      rippled:
+        condition: service_healthy
+    networks:
+     rippled-net:
+
+  scylla:
+    hostname: scylla
+    image: scylladb/scylla
+    container_name: scylla
+    command: [
+      "--memory", "4G",
+      "--smp", "1",
+    ]
+    healthcheck:
+      test: ["CMD", "/usr/bin/cqlsh", "-e", "SHOW VERSION"]
+      interval: 20s
+      timeout: 5m
+      retries: 5
+      start_period: 30s
+    networks:
+      rippled-net:
+
+  val0:
+    hostname: validator_0
+    image: ${IMAGE}
+    build:
+      dockerfile: ${RIPPLED_DOCKERFILE}
+    container_name: val0
+    volumes:
+        - ./Nodes/${VERSION}/node0:/etc/opt/ripple/
+        - val0:/var/lib/rippled:delegated
+    command: ["--start"]
+    healthcheck:
+      test: ["CMD", "rippled", "server_info"]
+      interval: 20s
+      timeout: 1m
+      retries: 5
+      start_period: 5s
+    networks:
+     rippled-net:
+
+  val1:
+    hostname: validator_1
+    image: ${IMAGE}
+    build:
+      dockerfile: ${RIPPLED_DOCKERFILE}
+    container_name: val1
+    volumes:
+        - ./Nodes/${VERSION}/node1:/etc/opt/ripple
+        - val1:/var/lib/rippled:delegated
+    networks:
+     rippled-net:
+    depends_on:
+      val0:
+        condition: service_healthy
+
+  val2:
+    hostname: validator_2
+    image: ${IMAGE}
+    build:
+      dockerfile: ${RIPPLED_DOCKERFILE}
+    container_name: val2
+    volumes:
+        - ./Nodes/${VERSION}/node2:/etc/opt/ripple
+        - val2:/var/lib/rippled:delegated
+    networks:
+     rippled-net:
+    depends_on:
+      val0:
+        condition: service_healthy
+
+  val3:
+    hostname: validator_3
+    image: ${IMAGE}
+    build:
+      dockerfile: ${RIPPLED_DOCKERFILE}
+    container_name: val3
+    volumes:
+        - ./Nodes/${VERSION}/node3:/etc/opt/ripple
+        - val3:/var/lib/rippled:delegated
+    networks:
+     rippled-net:
+    depends_on:
+      val0:
+        condition: service_healthy
+
+  val4:
+    hostname: validator_4
+    image: ${IMAGE}
+    build:
+      dockerfile: ${RIPPLED_DOCKERFILE}
+    container_name: val4
+    volumes:
+        - ./Nodes/${VERSION}/node4:/etc/opt/ripple
+        - val4:/var/lib/rippled:delegated
+    networks:
+     rippled-net:
+    depends_on:
+      val0:
+        condition: service_healthy
+
+volumes:  # REVIEW: Is there a point to this?
+  val0:
+  val1:
+  val2:
+  val3:
+  val4:
+  rippled:
+
+networks:
+  rippled-net:
+    name: rippled-net

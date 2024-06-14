@@ -1,0 +1,94 @@
+{
+    "start_sequence": 6,
+    "database": {
+        "type": "cassandra",
+        "cassandra": {
+            "contact_points": "scylla",
+            "port": 9042,
+            "keyspace": "clio",
+            "replication_factor": 1,
+            "table_prefix": "",
+            "max_write_requests_outstanding": 25000,
+            "max_read_requests_outstanding": 30000,
+            "threads": 8,
+            "core_connections_per_host": 1,
+            "write_batch_size": 20
+        }
+    },
+    "allow_no_etl": false,
+    "etl_sources": [
+        {
+            "ip": "RIPPLED_IP",
+            "ws_port": "6005",
+            "grpc_port": "50051"
+        }
+    ],
+    "dos_guard": {
+        "whitelist": [
+            "RIPPLED_IP"
+        ],
+        "max_fetches": 1000000,
+        "max_connections": 20,
+        "max_requests": 20,
+        "sweep_interval": 1
+    },
+    "server": {
+        "ip": "0.0.0.0",
+        "port": 51233,
+        "max_queue_size": 500,
+        "local_admin": true
+    },
+
+    "forwarding_cache_timeout": 0.1,
+    "cache": {
+        "num_diffs": 32,
+        "num_markers": 48,
+        "page_fetch_size": 512,
+        "load": "async"
+    },
+
+    "log_channels": [
+        {
+            "channel": "Backend",
+            "log_level": "debug"
+        },
+        {
+            "channel": "WebServer",
+            "log_level": "debug"
+        },
+        {
+            "channel": "Subscriptions",
+            "log_level": "debug"
+        },
+        {
+            "channel": "RPC",
+            "log_level": "debug"
+        },
+        {
+            "channel": "ETL",
+            "log_level": "debug"
+        },
+        {
+            "channel": "Performance",
+            "log_level": "debug"
+        }
+    ],
+    "prometheus": {
+        "enabled": true,
+        "compress_reply": true
+    },
+    "log_level": "debug",
+    "log_format": "%TimeStamp% (%SourceLocation%) [%ThreadID%] %Channel%:%Severity% %Message%",
+    "log_to_console": true,
+    "log_rotation_size": 2048,
+    "log_directory_max_size": 51200,
+    "log_rotation_hour_interval": 12,
+    "log_tag_style": "uint",
+    "extractor_threads": 8,
+    "read_only": false,
+    "api_version": {
+        "min": 1,
+        "max": 2,
+        "default": 1
+    }
+}
